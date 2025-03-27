@@ -1,0 +1,135 @@
+import Web3 from "web3";
+import nftABI from "./abis/NFTABI.json";
+import cosmoABI from "./abis/CosmoABI.json";
+import marketplaceABI from "./abis/MarketplaceABI.json";
+import stakingABI from "./abis/StakingABI.json";
+
+const web3 = new Web3(window.ethereum);
+
+const nftContract = new web3.eth.Contract(nftABI, process.env.REACT_APP_NFT_CONTRACT);
+const cosmoContract = new web3.eth.Contract(cosmoABI, process.env.REACT_APP_COSMO_CONTRACT);
+const marketplaceContract = new web3.eth.Contract(marketplaceABI, process.env.REACT_APP_MARKETPLACE_CONTRACT);
+const stakingContract = new web3.eth.Contract(stakingABI, process.env.REACT_APP_STAKING_CONTRACT);
+
+export { web3, nftContract, cosmoContract, marketplaceContract, stakingContract };
+import React, { useState, useEffect } from "react";
+import { web3, cosmoContract, nftContract, marketplaceContract, stakingContract } from "./web3";
+
+const Dashboard = () => {
+    const [account, setAccount] = useState("");
+    const [balance, setBalance] = useState(0);
+    const [nftCount, setNftCount] = useState(0);
+    const [stakedAmount, setStakedAmount] = useState(0);
+
+    useEffect(() => {
+        const loadBlockchainData = async () => {
+            const accounts = await web3.eth.getAccounts();
+            setAccount(accounts[0]);
+
+            const balance = await cosmoContract.methods.balanceOf(accounts[0]).call();
+            setBalance(web3.utils.fromWei(balance, "ether"));
+
+            const nftBalance = await nftContract.methods.balanceOf(accounts[0]).call();
+            setNftCount(nftBalance);
+
+            const staked = await stakingContract.methods.stakes(accounts[0]).call();
+            setStakedAmount(web3.utils.fromWei(staked, "ether"));
+        };
+        loadBlockchainData();
+    }, []);
+
+    return (
+        <div>
+            <h2>Cosmo Dashboard</h2>
+            <p>👤 Wallet: {account}</p>
+            <p>💰 Balance COSMO: {balance}</p>
+            <p>🎨 NFTs Possédés: {nftCount}</p>
+            <p>🔒 Staked COSMO: {stakedAmount}</p>
+        </div>
+    );
+};
+
+export default Dashboard;
+import React from "react";
+import { cosmoContract, web3 } from "./web3";
+
+const Mining = ({ account }) => {
+    const mineTokens = async () => {
+        await cosmoContract.methods.mineTokens().send({ from: account });
+        alert("Minage réussi !");
+    };
+
+    return (
+        <div>
+            <h3>⛏️ Minage COSMO</h3>
+            <button onClick={mineTokens}>Miner des Tokens</button>
+        </div>
+    );
+};
+
+export default Mining;
+import { useState } from 'react';
+
+const VerifyAvatar = ({ account }) => {
+    const [status, setStatus] = useState("");
+
+    const verifyTwitter = async (twitterHandle) => {
+        const res = await fetch("/verify/twitter", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ twitterHandle, account })
+        });
+        const data = await res.json();
+        setStatus(data.message);
+    };
+
+    return (
+        <div>
+            <h3>Vérifiez votre avatar NFT</h3>
+            <input type="text" placeholder="Twitter Handle" onBlur={(e) => verifyTwitter(e.target.value)} />
+            <p>{status}</p>
+        </div>
+    );
+};
+
+export default VerifyAvatar;
+import React, { useState } from "react";
+import { stakingContract, web3 } from "./web3";
+
+const Staking = ({ account }) => {
+    const [amount, setAmount] = useState("");
+
+    const stakeTokens = async () => {
+        await stakingContract.methods.stake(web3.utils.toWei(amount, "ether")).send({ from: account });
+        alert("Staking réussi !");
+    };
+
+    const claimRewards = async () => {
+        await stakingContract.methods.claimRewards().send({ from: account });
+        alert("Récompenses récupérées !");
+    };
+
+    return (
+        <div>
+            <h3>🔒 Staking COSMO</h3>
+            <input type="number" placeholder="Montant" onChange={(e) => setAmount(e.target.value)} />
+            <button onClick={stakeTokens}>Staker</button>
+            <button onClick={claimRewards}>Récupérer Récompenses</button>
+        </div>
+    );
+};
+
+export default Staking;
+module.exports = {
+  networks: {
+    mainnet: {
+      url: "https://mainnet.infura.io/v3/YOUR_PROJECT_ID",
+      accounts: [process.env.PRIVATE_KEY]
+    },
+    bsc: {
+      url: "https://bsc-dataseed1.binance.org/",
+      accounts: [process.env.PRIVATE_KEY]
+    }
+  },
+  solidity: "0.8.0"
+};
