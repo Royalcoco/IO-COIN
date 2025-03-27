@@ -1,0 +1,10 @@
+npx create-react-app cosmo-dashboard
+cd cosmo-dashboard
+npm install web3 react-router-dom dotenv axios
+REACT_APP_INFURA_URL=https://mainnet.infura.io/v3/YOUR_PROJECT_ID
+REACT_APP_NFT_CONTRACT=0xYourNFTContract
+REACT_APP_COSMO_CONTRACT=0xYourCosmoContract
+REACT_APP_MARKETPLACE_CONTRACT=0xYourMarketplaceContract
+REACT_APP_STAKING_CONTRACT=0xYourStakingContract
+npx hardhat run scripts/deploy.js --network mainnet
+npx hardhat run scripts/deploy.js --network bsc
